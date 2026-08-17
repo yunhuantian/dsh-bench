@@ -1,0 +1,4 @@
+# dsh-bench bundle patch：以 bundle 插件形式挂载，进入 hub「自创作插件」分类。
+- insert:
+    - id: dsh-bench
+      name: dsh-bench

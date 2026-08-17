@@ -3,9 +3,21 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "虚拟 DSH 环境跑分机 — 插件/Skill 加载与工具调用基准（L1 零 token）",
+  "description": "虚拟 DSH 环境跑分机 — 插件/Skill 加载与工具调用基准（L1 零 token）。可扩展类插件：为 dsh-plugin-hub 提供独立性能评分。",
+  "keywords": ["dsh-plugin", "dsh-bench", "hub-ext", "benchmark"],
   "bin": {
     "dsh-bench": "./src/index.js"
+  },
+  "main": "./.dsh-plugin/index.mjs",
+  "exports": {
+    ".": "./.dsh-plugin/index.mjs",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
   },
   "scripts": {
     "bench": "node src/index.js"
