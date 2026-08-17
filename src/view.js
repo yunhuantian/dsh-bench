@@ -1,31 +1,39 @@
 /**
  * 对比视图 — 生成自包含 HTML 报告（无外部依赖，本地打开即可看）。
  * 深色主题；按 score 排序；wall / apply / bundle gzip 三组柱状图 + 明细表。
+ * previous: history 上一次 summary（{targets: {name: {score}}}），用于趋势 delta。
  */
-export function renderView(report) {
+export function renderView(report, previous = null) {
   const entries = [...(report.entries ?? [])].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
   const m = report.machine ?? {}
   const maxWall = Math.max(...entries.map((e) => e.wallMs || 0), 1)
   const maxApply = Math.max(...entries.map((e) => e.probeApplyMs || 0), 1)
   const maxGzip = Math.max(...entries.map((e) => e.bundle?.clientGzipKb || 0), 1)
+  const prevTargets = previous?.targets ?? {}
 
   const rows = entries.map((e) => {
     const pct = (v, max) => Math.min(100, Math.max(2, ((v || 0) / max) * 100))
-    const color = e.level === 'fast' ? '#4ade80' : e.level === 'medium' ? '#facc15' : '#f87171'
+    const color = e.level === 'fast' ? '#4ade80' : e.level === 'medium' ? '#facc15' : e.level === 'slow' ? '#f87171' : '#8b93a3'
     const badge = e.ok ? `<span style="color:${color}">● ${e.level ?? '—'}</span>` : '<span style="color:#f87171">✗ 失败</span>'
+    const prev = prevTargets[e.target]
+    const delta = prev && prev.score != null && e.score != null ? e.score - prev.score : null
+    const deltaHtml = delta != null
+      ? `<span class="delta ${delta > 0 ? 'up' : delta < 0 ? 'down' : ''}">${delta > 0 ? '▲' : delta < 0 ? '▼' : '='} ${Math.abs(delta)}</span>`
+      : ''
+    const l2 = e.l2?.mainEvalMs != null ? ` · eval=${e.l2.mainEvalMs}ms` : ''
     return `
     <div class="row">
       <div class="head">
         <span class="name">${esc(e.target)}</span>
         <span class="score" style="color:${color}">${e.score ?? '—'}</span>
-        <span class="level">${badge}${e.error ? ` <span class="err">(${esc(e.error)})</span>` : ''}</span>
+        <span class="level">${badge} ${deltaHtml}${e.error ? ` <span class="err">(${esc(e.error)})</span>` : ''}</span>
       </div>
       <div class="bars">
         <div class="bar"><span class="bl">wall</span><div class="track"><div class="fill wall" style="width:${pct(e.wallMs, maxWall)}%"></div></div><span class="bv">${e.wallMs}ms</span></div>
         <div class="bar"><span class="bl">apply</span><div class="track"><div class="fill apply" style="width:${pct(e.probeApplyMs, maxApply)}%"></div></div><span class="bv">${e.probeApplyMs?.toFixed(2) ?? '—'}s</span></div>
         <div class="bar"><span class="bl">bundle</span><div class="track"><div class="fill bundle" style="width:${pct(e.bundle?.clientGzipKb, maxGzip)}%"></div></div><span class="bv">${e.bundle?.clientGzipKb ?? '无'}KB</span></div>
       </div>
-      <div class="meta">hooks=${e.hookCount ?? '—'} · client=${e.bundle?.clientKb ?? '无'}KB · deps=${e.bundle?.deps ?? '—'}${e.bundle?.description ? ' · ' + esc(e.bundle.description) : ''}</div>
+      <div class="meta">hooks=${e.hookCount ?? '—'} · client=${e.bundle?.clientKb ?? '无'}KB · deps=${e.bundle?.deps ?? '—'}${l2}${e.bundle?.description ? ' · ' + esc(e.bundle.description) : ''}</div>
     </div>`
   }).join('\n')
 
@@ -45,6 +53,9 @@ export function renderView(report) {
   .score { font-size: 18px; font-weight: 700; min-width: 34px; }
   .level { font-size: 12px; color: #8b93a3; }
   .err { color: #f87171; }
+  .delta { font-size: 11px; padding: 0 4px; border-radius: 4px; }
+  .delta.up { color: #4ade80; background: rgba(74,222,128,.12); }
+  .delta.down { color: #f87171; background: rgba(248,113,113,.12); }
   .bars { display: grid; gap: 4px; }
   .bar { display: flex; align-items: center; gap: 8px; }
   .bl { width: 48px; color: #8b93a3; font-size: 11px; text-align: right; }

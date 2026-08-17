@@ -1,0 +1,38 @@
+[
+  {
+    "at": "2026-08-17T08:50:46.464Z",
+    "dsh": "dsh",
+    "targets": {
+      "gal-view": {
+        "score": 0,
+        "level": "fail",
+        "wallMs": 3640,
+        "applyMs": null
+      }
+    }
+  },
+  {
+    "at": "2026-08-17T08:51:07.100Z",
+    "dsh": "dsh",
+    "targets": {
+      "gal-view": {
+        "score": 100,
+        "level": "fast",
+        "wallMs": 4633,
+        "applyMs": 4.188
+      }
+    }
+  },
+  {
+    "at": "2026-08-17T08:51:14.534Z",
+    "dsh": "dsh",
+    "targets": {
+      "gal-view": {
+        "score": 100,
+        "level": "fast",
+        "wallMs": 4691,
+        "applyMs": 4.255
+      }
+    }
+  }
+]

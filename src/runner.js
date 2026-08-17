@@ -109,3 +109,35 @@ export function listPlugins(candidateRoot, max = 50) {
   } catch { /* ignore */ }
   return out
 }
+
+/**
+ * L2 Mock — 隔离子进程测插件 Node half 顶层模块执行耗时（冷加载）。
+ * 独立 node 进程 import 插件 main（cwd=sandbox，依赖可解析）；只执行顶层
+ * 代码（定义/注册），不触发 apply —— 零 token、不污染主进程。
+ */
+export function l2MockMain(pluginDir, cwd, timeoutMs = 30_000) {
+  return new Promise((resolve) => {
+    try {
+      const pkg = JSON.parse(readFileSync(join(pluginDir, 'package.json'), 'utf8'))
+      const main = join(pluginDir, String(pkg.main ?? 'index.js'))
+      if (!existsSync(main)) return resolve({ ok: false, mainEvalMs: null, error: 'no main' })
+      const script = `const t0=Date.now();await import(process.argv[1]);console.log('EVAL_MS='+(Date.now()-t0));`
+      const child = spawn(process.execPath, ['--input-type=module', '-e', script, main], {
+        cwd,
+        stdio: ['ignore', 'pipe', 'pipe'],
+        windowsHide: true,
+      })
+      let out = ''
+      let timedOut = false
+      const timer = setTimeout(() => { timedOut = true; try { child.kill() } catch { /* gone */ } }, timeoutMs)
+      child.stdout.on('data', (c) => { out += c })
+      child.on('exit', (code) => {
+        clearTimeout(timer)
+        const m = /EVAL_MS=(\d+)/.exec(out)
+        resolve({ ok: m !== null && code === 0, mainEvalMs: m ? Number(m[1]) : null, error: timedOut ? 'timeout' : m ? undefined : `exit ${code}` })
+      })
+    } catch (e) {
+      resolve({ ok: false, mainEvalMs: null, error: e.message })
+    }
+  })
+}

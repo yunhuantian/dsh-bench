@@ -1,0 +1,7 @@
+{
+  "mode": "e2e",
+  "target": "gal-view",
+  "ok": false,
+  "error": "缺少 DEEPSEEK_API_KEY —— E2E 消耗你的 token，需显式提供 key（启动环境 export DEEPSEEK_API_KEY=...）",
+  "estTokens": 0
+}

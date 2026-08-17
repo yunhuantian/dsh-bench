@@ -14,12 +14,13 @@ import { writeFileSync, mkdirSync, existsSync, readFileSync, rmSync } from 'node
 import { join, dirname, basename } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createSandbox, createSandboxNpm, removeSandbox } from './sandbox.js'
-import { runL1, resolveTarget, listPlugins } from './runner.js'
+import { runL1, resolveTarget, listPlugins, l2MockMain } from './runner.js'
 import { analyzeBundle } from './analyze.js'
 import { buildReport } from './report.js'
 import { computeScores } from './score.js'
 import { renderView } from './view.js'
 import { resolveTargets } from './targets.js'
+import { runE2E } from './e2e.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const PROBE_DIR = join(__dirname, 'probe')
@@ -32,9 +33,9 @@ function parseArgs(argv) {
   const targets = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
-    if (a === '--top' || a === '--out' || a === '--fixtures') {
+    if (a === '--top' || a === '--out' || a === '--fixtures' || a === '--history') {
       opts[a.slice(2)] = argv[++i]
-    } else if (a === '--view' || a === '--keep') {
+    } else if (a === '--view' || a === '--keep' || a === '--e2e' || a === '--no-l2') {
       opts[a.slice(2)] = true
     } else {
       targets.push(a)
@@ -50,11 +51,27 @@ async function main() {
   const top = Number(opts.top || 0)
   const fixturesPath = opts.fixtures ?? null
   const keepSandbox = opts.keep
+  const historyPath = opts.history || null
+
+  // E2E 模式（消耗 token，用户显式开启）：--e2e <pkg>
+  if (opts.e2e) {
+    const pkg = cliTargets[0]
+    if (!pkg) { console.error('[dsh-bench] --e2e 需要指定插件包名'); process.exit(1) }
+    const report = await runE2E(pkg, PROBE_DIR)
+    writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8')
+    console.log(`[dsh-bench] E2E 报告已写入: ${outPath}`)
+    console.log(`[dsh-bench] 本次消耗估算: ${report.estTokens} tokens（实际以供应商账单为准）`)
+    return
+  }
 
   // 被测清单
   let targets
   if (cliTargets.length > 0) {
-    targets = resolveTargets({ cliTargets })
+    // CLI 目标：先匹配本机已装（dir），否则当 npm 包
+    targets = cliTargets.map((r) => {
+      const local = resolveTarget(r, [WEB_PLUGINS])
+      return local ? { name: r, install: 'dir', dir: local } : { name: r, install: 'npm' }
+    })
   } else if (top > 0 || fixturesPath) {
     targets = resolveTargets({ top, fixturesPath })
   } else {
@@ -91,7 +108,10 @@ async function main() {
         sandbox = createSandbox(t.dir, PROBE_DIR, t.name)
       }
       const r1 = await runL1(sandbox.home, probeOut, t.name)
-      const bundle = analyzeBundle(sandbox.profileDir ? join(sandbox.profileDir, 'node_modules', t.name) : t.dir)
+      const pluginDir = sandbox.profileDir ? join(sandbox.profileDir, 'node_modules', t.name) : t.dir
+      const bundle = analyzeBundle(pluginDir)
+      // L2 Mock: 隔离子进程测 Node half 顶层执行（零 token）
+      const l2 = await l2MockMain(pluginDir, sandbox.profileDir || t.dir)
       entries.push({
         target: t.name,
         ok: r1.ok,
@@ -100,6 +120,7 @@ async function main() {
         hookCount: r1.hookCount,
         timeout: r1.timeout,
         error: r1.error,
+        l2: { mainEvalMs: l2.mainEvalMs, error: l2.error ?? null },
         bundle: {
           hasClient: bundle.hasClient,
           clientKb: bundle.clientBytes !== null ? Math.round(bundle.clientBytes / 1024) : null,
@@ -132,12 +153,33 @@ async function main() {
   console.log('[dsh-bench] 综合性能分（批内相对）:')
   const sorted = [...entries].sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
   for (const e of sorted) {
-    console.log(`   ${String(e.score ?? '—').padStart(3)}  ${e.level ?? '—'.padEnd(6)}  ${e.target}`)
+    const l2 = e.l2?.mainEvalMs != null ? ` eval=${e.l2.mainEvalMs}ms` : ''
+    console.log(`   ${String(e.score ?? '—').padStart(3)}  ${e.level ?? '—'.padEnd(6)}  ${e.target}${l2}`)
+  }
+
+  // 历史趋势：追加 summary 到 history 文件（跨版本回退检测）
+  let previous = null
+  if (historyPath) {
+    mkdirSync(dirname(historyPath), { recursive: true })
+    let history = []
+    if (existsSync(historyPath)) {
+      try { history = JSON.parse(readFileSync(historyPath, 'utf8')) } catch { history = [] }
+    }
+    previous = history.length > 0 ? history[history.length - 1] : null
+    const summary = {
+      at: report.generatedAt,
+      dsh: report.meta?.dsh ?? null,
+      targets: Object.fromEntries(entries.map((e) => [e.target, { score: e.score ?? null, level: e.level ?? null, wallMs: e.wallMs, applyMs: e.probeApplyMs }])),
+    }
+    history.push(summary)
+    history = history.slice(-50)
+    writeFileSync(historyPath, JSON.stringify(history, null, 2), 'utf8')
+    console.log(`[dsh-bench] 历史已追加: ${historyPath}（共 ${history.length} 次）`)
   }
 
   if (wantView) {
     const htmlPath = outPath.replace(/\.json$/i, '') + '-view.html'
-    writeFileSync(htmlPath, renderView(report), 'utf8')
+    writeFileSync(htmlPath, renderView(report, previous), 'utf8')
     console.log(`[dsh-bench] 对比视图: ${htmlPath}`)
   }
 }
