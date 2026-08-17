@@ -1,0 +1,16 @@
+{
+  "name": "dsh-bench",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "虚拟 DSH 环境跑分机 — 插件/Skill 加载与工具调用基准（L1 零 token）",
+  "bin": {
+    "dsh-bench": "./src/index.js"
+  },
+  "scripts": {
+    "bench": "node src/index.js"
+  },
+  "engines": {
+    "node": ">=22.19"
+  }
+}

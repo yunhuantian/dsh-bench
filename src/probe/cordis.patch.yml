@@ -1,0 +1,4 @@
+# dsh-bench-probe patch：向组合挂载探针（在目标插件之后，保证被测先加载）。
+- insert:
+    - id: dsh-bench-probe
+      name: dsh-bench-probe
