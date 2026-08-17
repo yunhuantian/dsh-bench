@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>dsh-bench · L1 加载基准</title>
+<style>
+  body { margin: 0; padding: 24px; background: #14181f; color: #e6e6e6; font: 13px/1.6 -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+  h1 { font-size: 18px; margin: 0 0 4px; }
+  .sub { color: #8b93a3; font-size: 12px; margin-bottom: 20px; }
+  .row { background: #1c232e; border: 1px solid #2a3342; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; }
+  .head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .name { font-weight: 600; font-size: 14px; }
+  .score { font-size: 18px; font-weight: 700; min-width: 34px; }
+  .level { font-size: 12px; color: #8b93a3; }
+  .err { color: #f87171; }
+  .bars { display: grid; gap: 4px; }
+  .bar { display: flex; align-items: center; gap: 8px; }
+  .bl { width: 48px; color: #8b93a3; font-size: 11px; text-align: right; }
+  .track { flex: 1; height: 10px; background: #2a3342; border-radius: 5px; overflow: hidden; }
+  .fill { height: 100%; border-radius: 5px; }
+  .fill.wall { background: #60a5fa; }
+  .fill.apply { background: #a78bfa; }
+  .fill.bundle { background: #34d399; }
+  .bv { width: 64px; font-size: 11px; color: #c9d1dc; }
+  .meta { margin-top: 8px; color: #8b93a3; font-size: 11px; }
+</style>
+</head>
+<body>
+<h1>dsh-bench · L1 加载基准（零 token）</h1>
+<div class="sub">2026-08-17T08:35:43.780Z · win32/x64 · 12 CPU · Node v22.22.2 · 模式 L1</div>
+
+    <div class="row">
+      <div class="head">
+        <span class="name">@liustack/modlens</span>
+        <span class="score" style="color:#facc15">64</span>
+        <span class="level"><span style="color:#facc15">● medium</span></span>
+      </div>
+      <div class="bars">
+        <div class="bar"><span class="bl">wall</span><div class="track"><div class="fill wall" style="width:89.20091076656186%"></div></div><span class="bv">8227ms</span></div>
+        <div class="bar"><span class="bl">apply</span><div class="track"><div class="fill apply" style="width:88.33469292623238%"></div></div><span class="bv">7.58s</span></div>
+        <div class="bar"><span class="bl">bundle</span><div class="track"><div class="fill bundle" style="width:2%"></div></div><span class="bv">无KB</span></div>
+      </div>
+      <div class="meta">hooks=61 · client=无KB · deps=2 · Plug-in vision for text-only LLMs, powered by the free Antigravity CLI</div>
+    </div>
+
+    <div class="row">
+      <div class="head">
+        <span class="name">dsh-better-sidebar</span>
+        <span class="score" style="color:#f87171">40</span>
+        <span class="level"><span style="color:#f87171">● slow</span></span>
+      </div>
+      <div class="bars">
+        <div class="bar"><span class="bl">wall</span><div class="track"><div class="fill wall" style="width:100%"></div></div><span class="bv">9223ms</span></div>
+        <div class="bar"><span class="bl">apply</span><div class="track"><div class="fill apply" style="width:100%"></div></div><span class="bv">8.58s</span></div>
+        <div class="bar"><span class="bl">bundle</span><div class="track"><div class="fill bundle" style="width:2%"></div></div><span class="bv">无KB</span></div>
+      </div>
+      <div class="meta">hooks=60 · client=无KB · deps=45 · DSH web plugin: a VSCode-like right sidebar (explorer / editor / terminal / git / browser), isolated per conversation se</div>
+    </div>
+
+    <div class="row">
+      <div class="head">
+        <span class="name">@deepseek-harness-tui/dsh-tui</span>
+        <span class="score" style="color:#f87171">0</span>
+        <span class="level"><span style="color:#f87171">✗ 失败</span> <span class="err">(exit 1)</span></span>
+      </div>
+      <div class="bars">
+        <div class="bar"><span class="bl">wall</span><div class="track"><div class="fill wall" style="width:28.699989157540926%"></div></div><span class="bv">2647ms</span></div>
+        <div class="bar"><span class="bl">apply</span><div class="track"><div class="fill apply" style="width:2%"></div></div><span class="bv">—s</span></div>
+        <div class="bar"><span class="bl">bundle</span><div class="track"><div class="fill bundle" style="width:2%"></div></div><span class="bv">无KB</span></div>
+      </div>
+      <div class="meta">hooks=— · client=无KB · deps=51 · Claude Code style interactive TUI front door for DeepSeek Harness agents, built on the ported Ink core.</div>
+    </div>
+</body>
+</html>
