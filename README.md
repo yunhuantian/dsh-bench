@@ -1,7 +1,9 @@
 # dsh-bench — 虚拟 DSH 环境跑分机
 
 在隔离的虚拟 DSH 环境中为插件 / Skill 测量**加载与工具调用耗时**，建立独立的性能评分体系。
-与 dsh-plugin-hub 完全解耦，通过 benchmark.json 报告单向消费。
+
+> **归属**：本包是 **[dsh-plugin-hub](https://github.com/yunhuantian/dsh-plugin-hub) 生态的可扩展类插件**（官方自研，hub 内标记为「可扩展类 / Hub Extensions」）。
+> 跑分报告由 hub 商店消费（插件详情页「跑分」tab）；**脱离 hub 单独运行无法发挥完整价值**，请配合 hub 使用。
 
 ## 状态
 
